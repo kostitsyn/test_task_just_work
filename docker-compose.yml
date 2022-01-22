@@ -6,27 +6,43 @@ services:
     privileged: true
     expose:
       - 5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: test_task
+    env_file:
+      - ./db.env
 
-  adminer:
-    image: adminer:4.7.8-standalone
-    restart: always
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
     ports:
-      - 8090:8080
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - rabbitmq_go_net
     depends_on:
       - db
 
-  backend:
+  runserver:
     build:
       context: .
     ports:
-      - 8080:8080
+      - 8000:8000
     command: bash -c "
       ./wait-for-postgres.sh db
-      && gunicorn test_task.wsgi -b 0.0.0.0:8080
+      && python3 manage.py makemigrations
+      && python3 manage.py migrate
+      && python3 manage.py create_superuser
+      && python3 manage.py runserver 0.0.0.0:8000
       "
     depends_on:
-      - db
+      - rabbitmq
+
+  autotests:
+    build:
+      context: .
+    command: bash -c "
+      python3 manage.py test --settings=test_task.settings
+      "
+    depends_on:
+      - rabbitmq
+
+networks:
+  rabbitmq_go_net:
+    driver: bridge
