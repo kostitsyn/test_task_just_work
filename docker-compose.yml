@@ -11,9 +11,12 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
     ports:
-      - 5672:5672
-      - 15672:15672
+      - 5673:5672
+      - 15673:15672
+    env_file:
+      - ./db.env
     networks:
       - rabbitmq_go_net
     depends_on:
@@ -26,23 +29,43 @@ services:
       - 8000:8000
     command: bash -c "
       ./wait-for-postgres.sh db
-      && python3 manage.py makemigrations
-      && python3 manage.py migrate
-      && python3 manage.py create_superuser
       && python3 manage.py runserver 0.0.0.0:8000
+      && celery -A test_task worker -l info -P gevent
       "
     depends_on:
       - rabbitmq
 
-  autotests:
-    build:
-      context: .
-    command: bash -c "
-      python3 manage.py test --settings=test_task.settings
-      "
+  celery:
+    build: .
+    command: celery -A test_task worker -l info
+#    volumes:
+#      - ./backend:/usr/src/app
+#    env_file:
+#      - ./db.env
+    environment:
+      - CELERY_BROKER_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5673//
+      - CELERY_ACCEPT_CONTENT=['json']
+      - CELERY_RESULT_SERIALIZER='json'
+      - CELERY_TASK_SERIALIZER='json'
+      - CELERY_ENABLE_UTC=True
     depends_on:
       - rabbitmq
+
+#  autotests:
+#    build:
+#      context: .
+#    command: bash -c "
+#      python3 manage.py test --settings=test_task.settings
+#      "
+#    depends_on:
+#      - rabbitmq
 
 networks:
   rabbitmq_go_net:
     driver: bridge
+
+
+#&& python3 manage.py makemigrations
+#&& python3 manage.py migrate
+#&& python3 manage.py create_superuser
+#&& celery -A test_task worker -l info -P gevent

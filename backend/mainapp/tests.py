@@ -1,11 +1,7 @@
-import json
-from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APIRequestFactory, APIClient, APISimpleTestCase, APITestCase
+from rest_framework.test import APITestCase
 from mixer.backend.django import mixer
-from .views import PageModelViewSet, VideoModelViewSet, AudioModelViewSet, TextModelViewSet
 from .models import Page, Video, Audio, Text
-
 
 
 class TestVideoViewSet(APITestCase):
