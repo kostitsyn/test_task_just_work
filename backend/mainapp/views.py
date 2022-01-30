@@ -14,6 +14,7 @@ class PageModelViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, Generic
     def retrieve(self, request, *args, pk=None):
         obj = Page.objects.get(pk=pk)
         add_counter.delay(pk)
+        # add_counter(pk)
         serializer_context = {'request': request}
         serializer = self.serializer_class(obj, context=serializer_context)
         return Response(serializer.data)

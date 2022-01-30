@@ -93,18 +93,18 @@ WSGI_APPLICATION = 'test_task.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
     # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': data.get('DB_NAME'),
-    #     'USER': data.get('DB_USER'),
-    #     'PASSWORD': data.get('DB_PASSWORD'),
-    #     'HOST': 'db',
-    #     'PORT': '5432',
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': data.get('DB_NAME'),
+        'USER': data.get('DB_USER'),
+        'PASSWORD': data.get('DB_PASSWORD'),
+        'HOST': 'db',
+        'PORT': '5432',
+    }
 }
 
 
@@ -166,8 +166,10 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ENABLE_UTC = True
-CELERY_BROKER_URL = 'amqp://guest@localhost:5672//'
-# CELERY_BROKER_URL = 'amqp://rabbitmq:rabbitmq@rabbitmq:5673//'
-# BROKER_URL = 'django://'
+# CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbit:5672/'
+# CELERY_BROKER_URL = 'amqp://django:geekbrains@rabbit:5672//'
 
+# CELERY_RESULT_BACKEND = "rpc://"
+# CELERY_TASK_ALWAYS_EAGER = True
 ADMIN_TOOLS_INDEX_DASHBOARD = 'test_task.dashboard.CustomIndexDashboard'

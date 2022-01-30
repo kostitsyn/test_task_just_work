@@ -1,12 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
+from django.conf import settings
+
 
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'test_task.settings')
 
-app = Celery('test_task')
+# app = Celery('test_task', broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND)
+app = Celery('test_task', broker='amqp://guest:guest@rabbit:5672/')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

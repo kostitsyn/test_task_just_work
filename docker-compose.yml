@@ -3,53 +3,53 @@ version: '3.1'
 services:
   db:
     image: postgres:latest
+    container_name: postgres
     privileged: true
     expose:
       - 5432
     env_file:
       - ./db.env
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
+  adminer:
+    image: adminer:4.7.8-standalone
+    container_name: adminer
+    restart: always
     ports:
-      - 5673:5672
-      - 15673:15672
-    env_file:
-      - ./db.env
-    networks:
-      - rabbitmq_go_net
+      - 8090:8080
+    depends_on:
+      - db
+
+  celery:
+    build: .
+    container_name: celery
+#    environment:
+#      - CELERY_BROKER_URL=rabbit
+    command: celery -A test_task worker --without-mingle -l info
+    depends_on:
+      - rabbit
+    restart: on-failure
+
+  rabbit:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbit
+    ports:
+      - 15672:15672
     depends_on:
       - db
 
   runserver:
+    container_name: django
     build:
       context: .
     ports:
       - 8000:8000
+    restart: on-failure
     command: bash -c "
       ./wait-for-postgres.sh db
       && python3 manage.py runserver 0.0.0.0:8000
-      && celery -A test_task worker -l info -P gevent
       "
     depends_on:
-      - rabbitmq
-
-  celery:
-    build: .
-    command: celery -A test_task worker -l info
-#    volumes:
-#      - ./backend:/usr/src/app
-#    env_file:
-#      - ./db.env
-    environment:
-      - CELERY_BROKER_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5673//
-      - CELERY_ACCEPT_CONTENT=['json']
-      - CELERY_RESULT_SERIALIZER='json'
-      - CELERY_TASK_SERIALIZER='json'
-      - CELERY_ENABLE_UTC=True
-    depends_on:
-      - rabbitmq
+      - rabbit
 
 #  autotests:
 #    build:
@@ -60,9 +60,6 @@ services:
 #    depends_on:
 #      - rabbitmq
 
-networks:
-  rabbitmq_go_net:
-    driver: bridge
 
 
 #&& python3 manage.py makemigrations
